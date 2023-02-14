@@ -7,6 +7,11 @@ local create = require(PATH..".create")
 local collisions = require(PATH..".collisions")
 local operations = require(PATH..".operations")
 
+-- Locals declaration --
+
+local abs, sqrt = math.abs, math.sqrt
+local sin, cos = math.sin, math.cos
+local huge = math.huge
 
 -- Get value --
 
@@ -25,7 +30,7 @@ end
 
 local function getArea(polygon)
     local sum = getSignedArea(polygon)
-    return math.abs(sum/2)
+    return abs(sum/2)
 end
 
 local function getPerimeter(vertices)
@@ -39,7 +44,7 @@ local function getPerimeter(vertices)
             x1, y1 = vertices[i], vertices[i+1]
             x2, y2 = vertices[i+2], vertices[i+3]
         end
-        sum = sum + math.sqrt((x2-x1)^2+(y2-y1)^2)
+        sum = sum + sqrt((x2-x1)^2+(y2-y1)^2)
     end
     return sum
 end
@@ -72,9 +77,8 @@ local function getCentroid(polygon)
 end
 
 local function getClosestVertice(x,y,polygon)
-    local min_dist = math.huge
+    local min_dist = huge
     local nx, ny, nix, niy
-    local sqrt = math.sqrt
     for i = 1, #polygon-1, 2 do
         local px = polygon[i]
         local py = polygon[i+1]
@@ -89,8 +93,8 @@ local function getClosestVertice(x,y,polygon)
 end
 
 local function getBoundingBox(polygon)
-    local xMin, xMax = math.huge, -math.huge
-    local yMin, yMax = math.huge, -math.huge
+    local xMin, xMax = huge, -huge
+    local yMin, yMax = huge, -huge
     for i = 1, #polygon-1, 2 do
         xMin = polygon[i] < xMin and polygon[i] or xMin
         xMax = polygon[i] > xMax and polygon[i] or xMax
@@ -112,14 +116,14 @@ local function getDistanceBetweenPolys(polygon1, polygon2, fromCenter)
             cx1, cy1 = getCenter(polygon1)
             cx2, cy2 = getCenter(polygon2)
         end
-        return math.sqrt((cx1-cx2)^2+(cy1-cy2)^2)
+        return sqrt((cx1-cx2)^2+(cy1-cy2)^2)
     else
-        local min_dist = math.huge
+        local min_dist = huge
         for i = 1, #polygon1-3, 2 do
             for j = i+2, #polygon2-1, 2 do
                 local x1, y1 = polygon1[i], polygon1[i+1]
                 local x2, y2 = polygon2[j], polygon2[j+1]
-                local distance = math.sqrt((x1-x2)^2+(y1-y2)^2)
+                local distance = sqrt((x1-x2)^2+(y1-y2)^2)
                 if distance < min_dist then
                     min_dist = distance
                 end
@@ -143,8 +147,8 @@ end
 
 local function setTransform(polygon, dx, dy, r, sx, sy)
     local vertices = #polygon/2
-    local cosR = math.cos(r)
-    local sinR = math.sin(r)
+    local cosR = cos(r)
+    local sinR = sin(r)
     for i = 1, vertices do
         local x, y = polygon[2*i-1], polygon[2*i]
         polygon[2*i-1] = (x*cosR-y*sinR)*sx+dx
@@ -172,18 +176,26 @@ local function setPosition(polygon,x,y,type)
     setTranslation(polygon, dx, dy)
 end
 
-local function setRotation(polygon,r,from)
+local function setRotation(polygon,r,from,_)
     from = from or "center"
     local cx, cy
-    if "center" then
+    if from == "center" then
         cx, cy = getCenter(polygon)
-    elseif "centroid" then
+    elseif from == "centroid" then
         cx, cy = getCentroid(polygon)
+    else
+        local t = type(from)
+        if t == "number" then
+            cx, cy = from, _
+        elseif t == "table" then
+            cx = from[_ or 1] or from.x
+            cy = from[(_ or 1)+1] or from.y
+        end
     end
     local vertices = #polygon / 2
     for i = 1, vertices do
         local x, y = polygon[2*i-1]-cx, polygon[2*i]-cy
-        polygon[2*i-1], polygon[2*i] = cx+x*math.cos(r)-y*math.sin(r), cy+x*math.sin(r)+y*math.cos(r)
+        polygon[2*i-1], polygon[2*i] = cx+x*cos(r)-y*sin(r), cy+x*sin(r)+y*cos(r)
     end
 end
 

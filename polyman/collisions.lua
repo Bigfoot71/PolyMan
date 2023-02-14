@@ -1,6 +1,11 @@
 -- written by Le Juez Victor
 -- MIT license
 
+local sqrt, huge = math.sqrt, math.huge
+local min, max = math.min, math.max
+
+-- Collisions funcitons --
+
 local function pointInPolyFast(px,py,polygon)
     local oddNodes = false
     local j = #polygon-1
@@ -52,7 +57,7 @@ local function pointInPoly(x, y, polygon)
     local intersections = 0
     local vertices = #polygon/2
     local closest_x, closest_y = polygon[1], polygon[2]
-    local closest_distance = math.huge
+    local closest_distance = huge
     local closest_normal_x, closest_normal_y
     for i = 1, vertices do
         local j = i % vertices + 1
@@ -61,12 +66,12 @@ local function pointInPoly(x, y, polygon)
         if ((y1 > y) ~= (y2 > y)) and (x < (x2-x1) * (y-y1) / (y2-y1) + x1) then
             intersections = intersections + 1
         end
-        local segment_distance = math.min(math.sqrt((x-x1)^2+(y-y1)^2), math.sqrt((x-x2)^2+(y-y2)^2))
+        local segment_distance = min(sqrt((x-x1)^2+(y-y1)^2), sqrt((x-x2)^2+(y-y2)^2))
         if segment_distance < closest_distance then
             closest_distance = segment_distance
             closest_x, closest_y = x, y
             local segment_normal_x, segment_normal_y = y2-y1, x1-x2
-            local segment_normal_length = math.sqrt(segment_normal_x * segment_normal_x + segment_normal_y * segment_normal_y)
+            local segment_normal_length = sqrt(segment_normal_x * segment_normal_x + segment_normal_y * segment_normal_y)
             closest_normal_x, closest_normal_y = segment_normal_x / segment_normal_length, segment_normal_y / segment_normal_length
         end
     end
@@ -74,7 +79,7 @@ local function pointInPoly(x, y, polygon)
 end
 
 local function polyInPolyConvexFast(polygon1, polygon2)
-    local min_distance = math.huge
+    local min_distance = huge
     local min_nx, min_ny
 
     -- Calculate the normals for each line of the second polygon
@@ -90,21 +95,21 @@ local function polyInPolyConvexFast(polygon1, polygon2)
         end
 
         local nx, ny = y2-y1, x1-x2
-        local length = math.sqrt(nx * nx + ny * ny)
+        local length = sqrt(nx * nx + ny * ny)
         nx = nx / length
         ny = ny / length
 
         -- Checks the minimum distance between the two polygons along each normal
-        local min1, max1, min2, max2 = math.huge, -math.huge, math.huge, -math.huge
+        local min1, max1, min2, max2 = huge, -huge, huge, -huge
         for j = 1, #polygon1, 2 do
             local dot = nx * polygon1[j] + ny * polygon1[j+1]
-            min1 = math.min(min1, dot)
-            max1 = math.max(max1, dot)
+            min1 = min(min1, dot)
+            max1 = max(max1, dot)
         end
         for j = 1, #polygon2, 2 do
             local dot = nx * polygon2[j] + ny * polygon2[j+1]
-            min2 = math.min(min2, dot)
-            max2 = math.max(max2, dot)
+            min2 = min(min2, dot)
+            max2 = max(max2, dot)
         end
 
         -- If the polygons do not overlap, there is no collision
@@ -112,7 +117,7 @@ local function polyInPolyConvexFast(polygon1, polygon2)
             return false
         end
 
-        local distance = math.min(max2 - min1, max1 - min2)
+        local distance = min(max2 - min1, max1 - min2)
 
         if distance < min_distance then
             min_distance = distance
@@ -130,7 +135,7 @@ local function polyInPolyConvexFast(polygon1, polygon2)
 end
 
 local function polyInPolyConvexSlow(polygon1, polygon2)
-    local min_distance = math.huge
+    local min_distance = huge
     local min_nx, min_ny
 
     -- Calculate the normals for each line of both polygons
@@ -146,21 +151,21 @@ local function polyInPolyConvexSlow(polygon1, polygon2)
         end
 
         local nx, ny = y2-y1, x1-x2
-        local length = math.sqrt(nx * nx + ny * ny)
+        local length = sqrt(nx * nx + ny * ny)
         nx = nx / length
         ny = ny / length
 
         -- Checks the minimum distance between the two polygons along each normal
-        local min1, max1, min2, max2 = math.huge, -math.huge, math.huge, -math.huge
+        local min1, max1, min2, max2 = huge, -huge, huge, -huge
         for j = 1, #polygon1, 2 do
             local dot = nx * polygon1[j] + ny * polygon1[j+1]
-            min1 = math.min(min1, dot)
-            max1 = math.max(max1, dot)
+            min1 = min(min1, dot)
+            max1 = max(max1, dot)
         end
         for j = 1, #polygon2, 2 do
             local dot = nx * polygon2[j] + ny * polygon2[j+1]
-            min2 = math.min(min2, dot)
-            max2 = math.max(max2, dot)
+            min2 = min(min2, dot)
+            max2 = max(max2, dot)
         end
 
         -- If the polygons do not overlap, there is no collision
@@ -168,7 +173,7 @@ local function polyInPolyConvexSlow(polygon1, polygon2)
             return false
         end
 
-        local distance = math.min(max2 - min1, max1 - min2)
+        local distance = min(max2 - min1, max1 - min2)
 
         if distance < min_distance then
             min_distance = distance
@@ -193,21 +198,21 @@ local function polyInPolyConvexSlow(polygon1, polygon2)
         end
 
         local nx, ny = y2-y1, x1-x2
-        local length = math.sqrt(nx * nx + ny * ny)
+        local length = sqrt(nx * nx + ny * ny)
         nx = nx / length
         ny = ny / length
 
         -- Checks the minimum distance between the two polygons along each normal
-        local min1, max1, min2, max2 = math.huge, -math.huge, math.huge, -math.huge
+        local min1, max1, min2, max2 = huge, -huge, huge, -huge
         for j = 1, #polygon1, 2 do
             local dot = nx * polygon1[j] + ny * polygon1[j+1]
-            min1 = math.min(min1, dot)
-            max1 = math.max(max1, dot)
+            min1 = min(min1, dot)
+            max1 = max(max1, dot)
         end
         for j = 1, #polygon2, 2 do
             local dot = nx * polygon2[j] + ny * polygon2[j+1]
-            min2 = math.min(min2, dot)
-            max2 = math.max(max2, dot)
+            min2 = min(min2, dot)
+            max2 = max(max2, dot)
         end
 
         -- If the polygons do not overlap, there is no collision
@@ -215,7 +220,7 @@ local function polyInPolyConvexSlow(polygon1, polygon2)
             return false
         end
 
-        local distance = math.min(max2 - min1, max1 - min2)
+        local distance = min(max2 - min1, max1 - min2)
 
         if distance < min_distance then
             min_distance = distance

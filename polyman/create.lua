@@ -1,6 +1,10 @@
 -- written by Le Juez Victor
 -- MIT license
 
+local sin, cos, pi = math.sin, math.cos, math.pi
+local acos, rand = math.acos, math.random
+local floor = math.floor
+
 local function triangle(cx, cy, sideLength, type)
     type = type or "equilateral"
     if type == "equilateral" then
@@ -42,9 +46,9 @@ local function ellipse(cx, cy, rx, ry, segments)
     segments = segments or 40
     local vertices = {cx,cy}
     for i=0, segments do
-        local angle = (i / segments) * math.pi * 2
-        local x = cx + math.cos(angle) * rx
-        local y = cy + math.sin(angle) * ry
+        local angle = (i / segments) * pi * 2
+        local x = cx + cos(angle) * rx
+        local y = cy + sin(angle) * ry
         vertices[#vertices+1] = x
         vertices[#vertices+1] = y
     end
@@ -52,23 +56,23 @@ local function ellipse(cx, cy, rx, ry, segments)
 end
 
 local function circle(cx,cy,r,segments,err)
-    return ellipse(cx,cy,r,r,segments or math.floor((math.pi/math.acos(1-(err or 0.33)/r)+.5)))
+    return ellipse(cx,cy,r,r,segments or floor((pi/acos(1-(err or 0.33)/r)+.5)))
 end
 
 local function donut(cx, cy, rx, ry, hrx, hry, segments)
     segments = segments or 40
     local vertices = {}
     for i=0, segments do
-        local angle = (i / segments) * math.pi * 2
-        local x = cx + math.cos(angle) * rx
-        local y = cy + math.sin(angle) * ry
+        local angle = (i / segments) * pi * 2
+        local x = cx + cos(angle) * rx
+        local y = cy + sin(angle) * ry
         vertices[#vertices+1] = x
         vertices[#vertices+1] = y
     end
     for i=0, segments do
-        local angle = (i / segments) * math.pi * 2
-        local x = cx + math.cos(angle) * hrx
-        local y = cy + math.sin(angle) * hry
+        local angle = (i / segments) * pi * 2
+        local x = cx + cos(angle) * hrx
+        local y = cy + sin(angle) * hry
         vertices[#vertices+1] = x
         vertices[#vertices+1] = y
     end
@@ -79,10 +83,10 @@ local function random(cx, cy, numSides, maxRadius)
     maxRadius = maxRadius or 100
     local vertices = {}
     for i = 1, numSides do
-        local angle = 2 * math.pi * (i - 1) / numSides
-        local radius = maxRadius * math.random()
-        local x = cx + radius * math.cos(angle)
-        local y = cy + radius * math.sin(angle)
+        local angle = 2 * pi * (i - 1) / numSides
+        local radius = maxRadius * rand()
+        local x = cx + radius * cos(angle)
+        local y = cy + radius * sin(angle)
         vertices[#vertices + 1] = x
         vertices[#vertices + 1] = y
     end
