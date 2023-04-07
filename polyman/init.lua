@@ -232,36 +232,26 @@ local function isConvex(polygon)
     return true
 end
 
-local function isSimple(polygon)
-    local n = #polygon
-    local finish = n-3
-    local ax, ay = polygon[n-1], polygon[n]
-    for i = 1, n, 2 do
-        local bx, by = polygon[i], polygon[i+1]
-        local cx, cy = polygon[i+2], polygon[i+3]
-        for j = i + 4, finish, 2 do
-            local dx, dy = polygon[j], polygon[j+1]
-            local dx1, dy1 = bx - ax, by - ay
-            local dx2, dy2 = dx - cx, dy - cy
-            local dx3, dy3 = ax - cx, ay - cy
-            local q = dx1*dy2 - dy1*dx2
-            if q == 0 then
-                return false
+local function isComplex(polygon)
+    local n = #polygon / 2
+    for i = 1, n do
+        for j = i + 2, n do
+            local x1, y1 = polygon[(i-1)*2+1], polygon[(i-1)*2+2]
+            local x2, y2 = polygon[i% n * 2+1], polygon[i% n * 2+2]
+            local x3, y3 = polygon[(j-1)*2+1], polygon[(j-1)*2+2]
+            local x4, y4 = polygon[j % n * 2+1], polygon[j % n * 2+2]
+            if x1 ~= x4 or y1 ~= y4 then
+                local dx1, dy1 = x2 - x1, y2 - y1
+                local dx2, dy2 = x4 - x3, y4 - y3
+                local delta = dx1 * dy2 - dy1 * dx2
+                if delta ~= 0 then
+                    local s, t = (dx2*(y1-y3) - dy2*(x1-x3)) / delta, (dx1*(y1-y3) - dy1*(x1-x3)) / delta
+                    if s >= 0 and s <= 1 and t >= 0 and t <= 1 then return true end
+                end
             end
-            local t1 = (dx2*dy3 - dy2*dx3)/q
-            if t1 < 0 or t1 > 1 then
-                return false
-            end
-            local t2 = (dx1*dy3 - dy1*dx3)/q
-            if t2 < 0 or t2 > 1 then
-                return false
-            end
-            cx, cy = dx, dy
         end
-        ax, ay = bx, by
-        finish = n
     end
-    return true
+    return false
 end
 
 
@@ -287,7 +277,7 @@ return {
 
     isCCW = isCCW;
     isConvex = isConvex;
-    isSimple = isSimple;
+    isComplex = isComplex;
 
     create = create;
     collisions = collisions;
