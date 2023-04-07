@@ -4,7 +4,8 @@
 local sqrt, huge = math.sqrt, math.huge
 local min, max = math.min, math.max
 
--- Collisions funcitons --
+
+-- Point in polygon detection --
 
 local function pointInPolyFast(px,py,polygon)
     local oddNodes = false
@@ -19,6 +20,34 @@ local function pointInPolyFast(px,py,polygon)
     end
     return oddNodes
 end
+
+local function pointInPoly(x, y, polygon)
+    local intersections = 0
+    local vertices = #polygon/2
+    local closest_x, closest_y = polygon[1], polygon[2]
+    local closest_distance = huge
+    local closest_normal_x, closest_normal_y
+    for i = 1, vertices do
+        local j = i % vertices + 1
+        local x1, y1 = polygon[2*i-1], polygon[2*i]
+        local x2, y2 = polygon[2*j-1], polygon[2*j]
+        if ((y1 > y) ~= (y2 > y)) and (x < (x2-x1) * (y-y1) / (y2-y1) + x1) then
+            intersections = intersections + 1
+        end
+        local segment_distance = min(sqrt((x-x1)^2+(y-y1)^2), sqrt((x-x2)^2+(y-y2)^2))
+        if segment_distance < closest_distance then
+            closest_distance = segment_distance
+            closest_x, closest_y = x, y
+            local segment_normal_x, segment_normal_y = y2-y1, x1-x2
+            local segment_normal_length = sqrt(segment_normal_x * segment_normal_x + segment_normal_y * segment_normal_y)
+            closest_normal_x, closest_normal_y = segment_normal_x / segment_normal_length, segment_normal_y / segment_normal_length
+        end
+    end
+    return (intersections % 2) == 1, closest_x, closest_y, closest_normal_x, closest_normal_y, closest_distance
+end
+
+
+-- Polygon in polygon detection --
 
 local function polyInPolyFast(p1, p2, intersectOnly)
     if not intersectOnly then
@@ -53,32 +82,7 @@ local function polyInPolyFast(p1, p2, intersectOnly)
     return false
 end
 
-local function pointInPoly(x, y, polygon)
-    local intersections = 0
-    local vertices = #polygon/2
-    local closest_x, closest_y = polygon[1], polygon[2]
-    local closest_distance = huge
-    local closest_normal_x, closest_normal_y
-    for i = 1, vertices do
-        local j = i % vertices + 1
-        local x1, y1 = polygon[2*i-1], polygon[2*i]
-        local x2, y2 = polygon[2*j-1], polygon[2*j]
-        if ((y1 > y) ~= (y2 > y)) and (x < (x2-x1) * (y-y1) / (y2-y1) + x1) then
-            intersections = intersections + 1
-        end
-        local segment_distance = min(sqrt((x-x1)^2+(y-y1)^2), sqrt((x-x2)^2+(y-y2)^2))
-        if segment_distance < closest_distance then
-            closest_distance = segment_distance
-            closest_x, closest_y = x, y
-            local segment_normal_x, segment_normal_y = y2-y1, x1-x2
-            local segment_normal_length = sqrt(segment_normal_x * segment_normal_x + segment_normal_y * segment_normal_y)
-            closest_normal_x, closest_normal_y = segment_normal_x / segment_normal_length, segment_normal_y / segment_normal_length
-        end
-    end
-    return (intersections % 2) == 1, closest_x, closest_y, closest_normal_x, closest_normal_y, closest_distance
-end
-
-local function polyInPolyConvexFast(polygon1, polygon2)
+local function polyInPolyConvexApprox(polygon1, polygon2)
     local min_distance = huge
     local min_nx, min_ny
 
@@ -134,7 +138,7 @@ local function polyInPolyConvexFast(polygon1, polygon2)
 
 end
 
-local function polyInPolyConvexSlow(polygon1, polygon2)
+local function polyInPolyConvexDetailed(polygon1, polygon2)
     local min_distance = huge
     local min_nx, min_ny
 
@@ -237,6 +241,9 @@ local function polyInPolyConvexSlow(polygon1, polygon2)
 
 end
 
+
+-- Other detection --
+
 local function segmentPoly(x1, y1, x2, y2, polygon)
     local len = #polygon
     for i = 1, len-1, 2 do
@@ -260,13 +267,14 @@ end
 
 return {
 
-    pointInPolyFast = pointInPolyFast,              -- Ne donne pas de valeurs pour le replacement
-    polyInPolyFast = polyInPolyFast,                -- Ne donne pas de valeurs pour le replacement
+    pointInPolyFast = pointInPolyFast,                      -- Does not give values ​​for replacement (Returns true or false)
+    pointInPoly = pointInPoly,                              -- Gives the values ​​for the replacement
 
-    pointInPoly = pointInPoly,                      -- Donne les valeurs pour le replacement
-    polyInPolyConvexFast = polyInPolyConvexFast,    -- Donne les valeurs pour le replacement
-    polyInPolyConvexSlow = polyInPolyConvexSlow,    -- Donne les valeurs pour le replacement
+    polyInPolyFast = polyInPolyFast,                        -- Does not give values ​​for replacement (Returns true or false)
 
-    segmentPoly = segmentPoly
+    polyInPolyConvexApprox = polyInPolyConvexApprox,        -- Gives the values ​​for the replacement
+    polyInPolyConvexDetailed = polyInPolyConvexDetailed,    -- Gives the values ​​for the replacement
+
+    segmentPoly = segmentPoly                               -- Returns true or false
 
 };

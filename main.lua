@@ -57,7 +57,7 @@ function love.update(dt)
             if love.mouse.isDown(1) then
 
                 for _, polygon in ipairs(polygons) do
-                    local inside, nx, ny, dist = pm.collisions.polyInPolyConvexFast(temp_rand_poly, polygon[1])
+                    local inside, nx, ny, dist = pm.collisions.polyInPolyConvexApprox(temp_rand_poly, polygon[1])
                     if inside then pm.setTranslation(temp_rand_poly, nx*dist, ny*dist) end
                 end
 
@@ -90,7 +90,7 @@ function love.update(dt)
         if love.mouse.isDown(2) then pm.setRotation(triangle,2*dt) end
 
         for _, polygon in ipairs(polygons) do
-            local inside, nx, ny, dist = pm.collisions.polyInPolyConvexSlow(triangle, polygon[1])
+            local inside, nx, ny, dist = pm.collisions.polyInPolyConvexDetailed(triangle, polygon[1])
             if inside then pm.setTranslation(triangle, nx*dist, ny*dist) end
         end
 
