@@ -11,12 +11,12 @@ local function pointInPolyFast(px,py,polygon)
     local oddNodes = false
     local j = #polygon-1
     for i = 1, #polygon-1, 2 do
-      if ((polygon[i+1] < py and polygon[j+1] >= py) or (polygon[j+1] < py and polygon[i+1] >= py)) then
-        if (polygon[i] + (py - polygon[i+1]) / (polygon[j+1] - polygon[i+1]) * (polygon[j] - polygon[i]) < px) then
-          oddNodes = not oddNodes
+        if ((polygon[i+1] < py and polygon[j+1] >= py) or (polygon[j+1] < py and polygon[i+1] >= py)) then
+            if (polygon[i] + (py - polygon[i+1]) / (polygon[j+1] - polygon[i+1]) * (polygon[j] - polygon[i]) < px) then
+                oddNodes = not oddNodes
+            end
         end
-      end
-      j = i
+        j = i
     end
     return oddNodes
 end
@@ -82,22 +82,26 @@ local function polyInPolyFast(p1, p2, intersectOnly)
     return false
 end
 
-local function polyInPolyConvexApprox(polygon1, polygon2)
+local function polyInPolyConvex(polygon1, polygon2, approximate)
+
     local min_distance = huge
     local min_nx, min_ny
 
-    -- Calculate the normals for each line of the second polygon
-    for i = 1, #polygon2, 2 do
+    local polygon = polygon1
+    local reiterated
 
+    ::reiterated::
+    for i = 1, #polygon, 2 do
+
+        -- Calculate the normals for each line of both polygons
         local x1, y1, x2, y2
-        if i == #polygon2 - 1 then
-            x1, y1 = polygon2[i], polygon2[i+1]
-            x2, y2 = polygon2[1], polygon2[2]
+        if i == #polygon - 1 then
+            x1, y1 = polygon[i], polygon[i+1]
+            x2, y2 = polygon[1], polygon[2]
         else
-            x1, y1 = polygon2[i], polygon2[i+1]
-            x2, y2 = polygon2[i+2], polygon2[i+3]
+            x1, y1 = polygon[i], polygon[i+1]
+            x2, y2 = polygon[i+2], polygon[i+3]
         end
-
         local nx, ny = y2-y1, x1-x2
         local length = sqrt(nx * nx + ny * ny)
         nx = nx / length
@@ -121,8 +125,8 @@ local function polyInPolyConvexApprox(polygon1, polygon2)
             return false
         end
 
+        -- Get the penetration distance and keep the results if it is the current smallest
         local distance = min(max2 - min1, max1 - min2)
-
         if distance < min_distance then
             min_distance = distance
             min_nx, min_ny = nx, ny
@@ -134,107 +138,9 @@ local function polyInPolyConvexApprox(polygon1, polygon2)
 
     end
 
-    return true, min_nx, min_ny, min_distance
-
-end
-
-local function polyInPolyConvexDetailed(polygon1, polygon2)
-    local min_distance = huge
-    local min_nx, min_ny
-
-    -- Calculate the normals for each line of both polygons
-    for i = 1, #polygon1, 2 do
-
-        local x1, y1, x2, y2
-        if i == #polygon1 - 1 then
-            x1, y1 = polygon1[i], polygon1[i+1]
-            x2, y2 = polygon1[1], polygon1[2]
-        else
-            x1, y1 = polygon1[i], polygon1[i+1]
-            x2, y2 = polygon1[i+2], polygon1[i+3]
-        end
-
-        local nx, ny = y2-y1, x1-x2
-        local length = sqrt(nx * nx + ny * ny)
-        nx = nx / length
-        ny = ny / length
-
-        -- Checks the minimum distance between the two polygons along each normal
-        local min1, max1, min2, max2 = huge, -huge, huge, -huge
-        for j = 1, #polygon1, 2 do
-            local dot = nx * polygon1[j] + ny * polygon1[j+1]
-            min1 = min(min1, dot)
-            max1 = max(max1, dot)
-        end
-        for j = 1, #polygon2, 2 do
-            local dot = nx * polygon2[j] + ny * polygon2[j+1]
-            min2 = min(min2, dot)
-            max2 = max(max2, dot)
-        end
-
-        -- If the polygons do not overlap, there is no collision
-        if min1 > max2 or min2 > max1 then
-            return false
-        end
-
-        local distance = min(max2 - min1, max1 - min2)
-
-        if distance < min_distance then
-            min_distance = distance
-            min_nx, min_ny = nx, ny
-            if max2 - min1 > max1 - min2 then
-                min_nx = -min_nx
-                min_ny = -min_ny
-            end
-        end
-
-    end
-
-    for i = 1, #polygon2, 2 do
-
-        local x1, y1, x2, y2
-        if i == #polygon2 - 1 then
-            x1, y1 = polygon2[i], polygon2[i+1]
-            x2, y2 = polygon2[1], polygon2[2]
-        else
-            x1, y1 = polygon2[i], polygon2[i+1]
-            x2, y2 = polygon2[i+2], polygon2[i+3]
-        end
-
-        local nx, ny = y2-y1, x1-x2
-        local length = sqrt(nx * nx + ny * ny)
-        nx = nx / length
-        ny = ny / length
-
-        -- Checks the minimum distance between the two polygons along each normal
-        local min1, max1, min2, max2 = huge, -huge, huge, -huge
-        for j = 1, #polygon1, 2 do
-            local dot = nx * polygon1[j] + ny * polygon1[j+1]
-            min1 = min(min1, dot)
-            max1 = max(max1, dot)
-        end
-        for j = 1, #polygon2, 2 do
-            local dot = nx * polygon2[j] + ny * polygon2[j+1]
-            min2 = min(min2, dot)
-            max2 = max(max2, dot)
-        end
-
-        -- If the polygons do not overlap, there is no collision
-        if min1 > max2 or min2 > max1 then
-            return false
-        end
-
-        local distance = min(max2 - min1, max1 - min2)
-
-        if distance < min_distance then
-            min_distance = distance
-            min_nx, min_ny = nx, ny
-            if max2 - min1 > max1 - min2 then
-                min_nx = -min_nx
-                min_ny = -min_ny
-            end
-        end
-
+    if not approximate and not reiterated then
+        polygon, reiterated = polygon2, true
+        goto reiterated
     end
 
     return true, min_nx, min_ny, min_distance
@@ -243,6 +149,33 @@ end
 
 
 -- Other detection --
+
+local function polyInPolyAABB(polygon1, polygon2)
+
+    local minX1, minY1, maxX1, maxY1 = huge, huge, -huge, -huge
+    local minX2, minY2, maxX2, maxY2 = huge, huge, -huge, -huge
+
+    for i = 1, #polygon1, 2 do
+        local x, y = polygon1[i], polygon1[i+1]
+        minX1, minY1 = min(minX1, x), min(minY1, y)
+        maxX1, maxY1 = max(maxX1, x), max(maxY1, y)
+    end
+
+    for i = 1, #polygon2, 2 do
+        local x, y = polygon2[i], polygon2[i+1]
+        minX2, minY2 = min(minX2, x), min(minY2, y)
+        maxX2, maxY2 = max(maxX2, x), max(maxY2, y)
+    end
+
+    if minX1 <= maxX2 and maxX1 >= minX2 and minY1 <= maxY2 and maxY1 >= minY2 then
+        local dx = (minX1 < minX2) and minX2 - maxX1 or maxX2 - minX1
+        local dy = (minY1 < minY2) and minY2 - maxY1 or maxY2 - minY1
+        return true, dx, dy
+    end
+
+    return false
+
+end
 
 local function segmentPoly(x1, y1, x2, y2, polygon)
     local len = #polygon
@@ -265,16 +198,16 @@ local function segmentPoly(x1, y1, x2, y2, polygon)
     return false
 end
 
+
 return {
 
-    pointInPolyFast = pointInPolyFast,                      -- Does not give values ​​for replacement (Returns true or false)
-    pointInPoly = pointInPoly,                              -- Gives the values ​​for the replacement
+    pointInPolyFast = pointInPolyFast,      -- Does not give values ​​for replacement (Returns true or false)
+    pointInPoly = pointInPoly,              -- Gives the values ​​for the replacement
 
-    polyInPolyFast = polyInPolyFast,                        -- Does not give values ​​for replacement (Returns true or false)
+    polyInPolyFast = polyInPolyFast,        -- Does not give values ​​for replacement (Returns true or false)
+    polyInPolyConvex = polyInPolyConvex,    -- Gives the values ​​for the replacement
 
-    polyInPolyConvexApprox = polyInPolyConvexApprox,        -- Gives the values ​​for the replacement
-    polyInPolyConvexDetailed = polyInPolyConvexDetailed,    -- Gives the values ​​for the replacement
-
-    segmentPoly = segmentPoly                               -- Returns true or false
+    polyInPolyAABB = polyInPolyAABB,        -- Gives the values ​​for the replacement
+    segmentPoly = segmentPoly               -- Returns true or false
 
 };
